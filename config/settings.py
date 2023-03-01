@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-v0sjmesfv*++3=@c8cz&qe!un8+_(v65whu#auhjy^3-p3@sbu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['121.168.15.211']
+ALLOWED_HOSTS = ['14.33.2.155']
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'qa_bot',
+    'qa_bot.jira_flow',
     'rest_framework',
 ]
 
