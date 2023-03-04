@@ -1,12 +1,18 @@
+import json
 from jira import JIRA
 
 '''
 이곳에서 Jira-Python 메서드를 요청하고 가공
 '''
 
-JIRA_API_TOKEN = 'ATATT3xFfGF0BPCSXLvvdtj8ASXYwZmKFoxqck3Bv4sALQnCMUcZdjPFq_JIYuZvyWi28jDX4oVTUe8cmtLjg2QG1-X8ViR_WJdgv6LKWwcBPJVDscCMap0fzB61SVyZOsyv0ZQ53YXeoPfA38ZZ_zwUFpYr-OC5JkNKIY7pW1etn7zIig53gsQ=78742648'
-auth_JIRA = ('jwbae@i-nara.co.kr', JIRA_API_TOKEN)
-jira = JIRA('https://kidsworld.atlassian.net/', basic_auth=auth_JIRA)
+# load configs
+json_path = "configs.json"
+with open(json_path, 'r') as json_file:
+    conf = json.load(json_file)
+
+JIRA_API_TOKEN = conf['JIRA']['JIRA_API_TOKEN']
+auth_JIRA = (conf['JIRA']['JIRA_ID'], JIRA_API_TOKEN)
+jira = JIRA(conf['JIRA']['JIRA_URL'], basic_auth=auth_JIRA)
 
 
 # 지라 프로젝트명을 담을 배열

@@ -13,15 +13,15 @@ from slack_sdk.errors import SlackApiError
 from template import *
 
 
-# load config
-# json_path = "../conf.json"
-# with open(json_path, 'r') as json_file:
-#     config_dict = json.load(json_file)
+# load configs
+json_path = "configs.json"
+with open(json_path, 'r') as json_file:
+    conf = json.load(json_file)
 
 # slack token
-SLACK_BOT_USER_TOKEN = 'xoxb-4853036420195-4882719846784-N7ugbLiVmJufznihg8w9mngH'
-SLACK_VERIFICATION_TOKEN = 'Fl5orjhiAeDtyGkji7BgTaC5'
-SLACK_SIGNING_SECRET = '86d36538be17ead7960cc1ce31c61dad'
+SLACK_BOT_USER_TOKEN = conf['SLACK']['SLACK_BOT_USER_TOKEN']
+SLACK_VERIFICATION_TOKEN = conf['SLACK']['SLACK_VERIFICATION_TOKEN']
+SLACK_SIGNING_SECRET = conf['SLACK']['SLACK_SIGNING_SECRET']
 # slack client
 Client = WebClient(token=SLACK_BOT_USER_TOKEN, timeout=10)
 # ssl 에러 해결
@@ -64,9 +64,6 @@ def get_reactions(request):
             if 'payload' in slack_message.dict().keys(): # QueryDict를 파이썬dict로 반환
                 payload = json.loads(slack_message.dict().get('payload')) # payload의 value를 load
                 print(payload)
-        except RuntimeError:
-            print('ww')
-
 
     return Response(status=status.HTTP_200_OK)
 
