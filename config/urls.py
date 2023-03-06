@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from qa_bot import views
+from qa_bot.views import QaBot
 
 urlpatterns = [
     path('admin/', admin.site.urls),

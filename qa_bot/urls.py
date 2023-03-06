@@ -15,8 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from qa_bot import views
+from .views import QaBot
 
 urlpatterns = [
-    path('bot/', views.get_reactions),
+    path('bot/', QaBot.as_view()),
 ]

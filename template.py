@@ -2,13 +2,10 @@ from qa_bot.jira_flow import *
 import json
 
 
-def send_loading_message(user_name, issuetype):
-    if issuetype == '작업':
-        text = f'{user_name}님이 {issuetype}을 등록중입니다 :loading:'
-        return text
-    elif issuetype == '버그':
-        text = f'{user_name}님이 {issuetype}를 등록중입니다 :loading:'
-        return text
+def send_loading_message(user_name):
+    text = f'{user_name}님이 티켓을 등록중입니다 :loading:'
+    return text
+
 
 
 def send_loading_options():
