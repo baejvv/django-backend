@@ -5,6 +5,7 @@ from slack_bolt import App
 from slack_bolt.adapter.django import SlackRequestHandler
 from jira import JIRA
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from slack_custom.views import SlackCustomView
@@ -32,7 +33,7 @@ class QaBot(APIView):
     def post(self, request, format=None):
         if request.method == 'POST':
             SlackCustomView.post(self, request)
-            return Response(status=200)
+            return Response(status=status.HTTP_200_OK)
         else:
-            return Response(status=400)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
