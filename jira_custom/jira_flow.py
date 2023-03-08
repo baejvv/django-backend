@@ -40,11 +40,12 @@ def post_jira_project(user_select_project):
 
 
 # view에서 넘겨받은 정보를 토대로 jira 이슈 생성
-def create_jira_issue(project_key, summary, description, issue_type):
+def create_jira_issue():
     issue_dict = {
-        'project': {'key': f'{project_key}'},
-        'summary': f'{summary}',
-        'description': f'{description}',
-        'issuetype': {'name': f'{issue_type}'},
+        'project': {'key': 'QA'}, # jira project key
+        'summary': '테스트이슈', # str
+        'description': '테스트입니다', # str
+        'issuetype': {'name': '작업'},  # str
+        'assignee': {'id': '626889e21a4eb30069d0734f'}, # jira user accountId
     }
     jira.create_issue(fields=issue_dict)

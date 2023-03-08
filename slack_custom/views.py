@@ -5,8 +5,6 @@ import os
 from threading import Thread
 import queue
 from django.shortcuts import render
-from django.http import HttpRequest, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -75,13 +73,18 @@ class SlackCustomView(APIView):
             elif 'payload' in slack_message.dict().keys(): # QueryDict를 파이썬dict로 반환
                 payload = json.loads(slack_message.dict().get('payload')) # payload의 value를 load
                 trigger_id = payload['trigger_id']
-                # SlackCustomView.run_modal(self, trigger_id) # modal 오픈
-                # 드롭다운 업데이트 전 모달 먼저 응답하기 위한 Threading 처리- 타임아웃 방지를 막기 위함
+                # 드롭다운 업데이트 전 모달 먼저 응답하기 위한 Threading처리, 쓰레드2는 쓰레드1에서 실행
                 modal_view = open_reaction_modal()
-                modal_th1 = Thread(target=SlackCustomView.run_modal, args=(self, trigger_id, modal_view,))
-                modal_th1.start()
-                modal_th1.join(timeout=10)
-                SlackCustomView.update_modal(self, trigger_id, modal_view)
+                response, modal_view, view_id = SlackCustomView.run_modal(self, trigger_id, modal_view)
+                if response.status_code == 200:
+                    pnl, pnk = get_jira_project()
+                    SlackCustomView.update_modal(self, modal_view, view_id, pnl, pnk)
+
+
+                # modal_th1 = Thread(target=SlackCustomView.run_modal, args=(self, trigger_id, modal_view,))
+                # modal_th1.start()
+                # modal_th1.join(timeout=10)
+
 
         return Response(status=status.HTTP_200_OK)
 
@@ -117,26 +120,32 @@ class SlackCustomView(APIView):
                 view=modal_view
             )
             view_id = res['view']['id']
-            modal_th2 = Thread(target=SlackCustomView.update_modal, args=(self, modal_view, view_id,))
-            modal_th2.start()
+            return Response(status=status.HTTP_200_OK), modal_view, view_id
         except SlackApiError as e:
             print("Error opening modal: {}".format(e))
             return Response({"Fail": f"{e.response['error']}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
     # 모달의 뷰를 업데이트 하는 메서드
-    def update_modal(self, modal_view, view_id):
+    def update_modal(self, modal_view, view_id, pnl, pnk):
 
         # 아이들나라 전체 프로젝트 name list
-        pnl = get_jira_project()[0]
-        # pnl_dict = {string : i for i,string in enumerate(pnl)}
-        # dict1 = {"test": "dasd", "test1": "sad", "test2": "asd"}
-        list1 = [1, 2, 3]
+        # pnl, pnk = get_jira_project()
+        # print(pnl)
+        # print(pnk)
         # 가져온 list를 드롭다운으로 추가
-        for i in list1:
-            modal_view['blocks'][1]['element']['options'].insert(0, {'text': {'type': 'plain_text', 'text': f"{list1}"}, 'value': f'{i}'})
+        try:
+            for i, value in zip(pnl, pnk):
+                modal_view['blocks'][1]['element']['options'].insert(0, {'text': {'type': 'plain_text', 'text': f"{i}"}, 'value': f'{value}'})
 
-        Client.views_update(
-            view=modal_view,
-            view_id=view_id
-        )
+            # 로딩문구 교체
+            modal_view['blocks'][1]['label']['text'] = "티켓을 등록하실 Jira 프로젝트를 선택해주세요."
+
+            Client.views_update(
+                view=modal_view,
+                view_id=view_id
+            )
+            return Response(status=status.HTTP_200_OK)
+        except SlackApiError as e:
+            print("Error opening modal: {}".format(e))
+            return Response({"Fail": f"{e.response['error']}"}, status=status.HTTP_400_BAD_REQUEST)

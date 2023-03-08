@@ -188,7 +188,7 @@ def open_keyword_modal():
                         {
                             "text": {
                                 "type": "plain_text",
-                                "text": "조금만 기다려주세요.",
+                                "text": "직접입력",
                                 "emoji": True
                             },
                             "value": "value-0"
