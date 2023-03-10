@@ -19,13 +19,15 @@ with open(json_path, 'r') as json_file:
     conf = json.load(json_file)
 
 
-# Slack tokens
+# Slack
 SLACK_BOT_TOKEN = conf['SLACK']['SLACK_BOT_TOKEN']
 SLACK_APP_TOKEN = conf['SLACK']['SLACK_APP_TOKEN']
 SLACK_VERIFICATION_TOKEN = conf['SLACK']['SLACK_VERIFICATION_TOKEN']
 SLACK_SIGNING_SECRET = conf['SLACK']['SLACK_SIGNING_SECRET']
-# 슬랙 클라이언트 인스턴스 생성
-Client = WebClient(token=SLACK_BOT_TOKEN, timeout=10)
+Client = WebClient(token=SLACK_BOT_TOKEN, timeout=10)  # 자원 낭비를 막기 위한 Timeout
+
+# Use Jira API
+pnl, pnk = get_jira_project()
 
 
 class SlackCustomView(APIView):
@@ -77,14 +79,7 @@ class SlackCustomView(APIView):
                 modal_view = open_reaction_modal()
                 response, modal_view, view_id = SlackCustomView.run_modal(self, trigger_id, modal_view)
                 if response.status_code == 200:
-                    pnl, pnk = get_jira_project()
                     SlackCustomView.update_modal(self, modal_view, view_id, pnl, pnk)
-
-
-                # modal_th1 = Thread(target=SlackCustomView.run_modal, args=(self, trigger_id, modal_view,))
-                # modal_th1.start()
-                # modal_th1.join(timeout=10)
-
 
         return Response(status=status.HTTP_200_OK)
 
@@ -140,6 +135,7 @@ class SlackCustomView(APIView):
 
             # 로딩문구 교체
             modal_view['blocks'][1]['label']['text'] = "티켓을 등록하실 Jira 프로젝트를 선택해주세요."
+            print(modal_view)
 
             Client.views_update(
                 view=modal_view,
