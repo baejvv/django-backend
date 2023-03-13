@@ -1,17 +1,10 @@
-import json
-import ssl
-import logging as logger
-import os
-from threading import Thread
-import queue
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from slack_sdk.web.client import WebClient
 from slack_sdk.errors import SlackApiError
 from template import *
-from jira_custom.jira_flow import *
+from qa_bot.jira_flow import *
 
 
 json_path = "qa_bot/configs.json"
@@ -27,7 +20,8 @@ SLACK_SIGNING_SECRET = conf['SLACK']['SLACK_SIGNING_SECRET']
 Client = WebClient(token=SLACK_BOT_TOKEN, timeout=10)  # 자원 낭비를 막기 위한 Timeout
 
 # Use Jira API
-pnl, pnk = get_jira_project()
+pn_list, pk_list = get_jira_project()
+
 
 
 class SlackCustomView(APIView):
@@ -55,8 +49,8 @@ class SlackCustomView(APIView):
                         ts = type.get('ts')
 
                         SlackCustomView.react_event(self) # username return
-
                         return Response(status=status.HTTP_200_OK)
+
                     # 키워드 감지 시 로직
                     elif '!작업' in text:
                         SlackCustomView.react_event(self)
@@ -74,14 +68,39 @@ class SlackCustomView(APIView):
             # payload 응답을 수신한 경우, trigger_id를 추출하여 modal을 띄움
             elif 'payload' in slack_message.dict().keys(): # QueryDict를 파이썬dict로 반환
                 payload = json.loads(slack_message.dict().get('payload')) # payload의 value를 load
-                trigger_id = payload['trigger_id']
-                # 드롭다운 업데이트 전 모달 먼저 응답하기 위한 Threading처리, 쓰레드2는 쓰레드1에서 실행
-                modal_view = open_reaction_modal()
-                response, modal_view, view_id = SlackCustomView.run_modal(self, trigger_id, modal_view)
-                if response.status_code == 200:
-                    SlackCustomView.update_modal(self, modal_view, view_id, pnl, pnk)
+                if payload['type'] == 'block_actions':
+                    trigger_id = payload['trigger_id']
+                    # 드롭다운 업데이트 전 모달 먼저 응답하기 위한 Threading처리, 쓰레드2는 쓰레드1에서 실행
+                    modal_view = open_reaction_modal()
+                    try:
+                        response, modal_view, view_id = SlackCustomView.run_modal(self, trigger_id, modal_view)
+                        if response.status_code == 200:
+                            SlackCustomView.update_modal(self, modal_view, view_id, pn_list, pk_list)
+                    except SlackApiError as e:
+                        print("Error opening modal: {}".format(e))
+                        return Response({"Fail": f"{e.response['error']}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(status=status.HTTP_200_OK)
+                # 이슈 등록 버튼을 선택했을 때
+                elif payload['type'] == 'view_submission':
+                    user = payload['user']['id']
+                    select_values = payload['view']['state']['values']
+                    ust, usp, uis, uid = select_values.keys()
+                    selected_type = select_values[ust]['userSelectType']['selected_option']['text']['text']
+                    selected_project_key = select_values[usp]['userSelectProject']['selected_option']['value']
+                    inputted_summary = select_values[uis]['userInputSummary']['value']
+                    inputted_description = select_values[uid]['userInputDescription']['value']
+                    try:
+                        user_name = Client.api_call(api_method='users.info',
+                                                    params={'token': SLACK_BOT_TOKEN,
+                                                            'user': user}
+                                                    )['user']['real_name']
+                        assignee = get_jira_user_id(user_name)['users']['users'][0]['accountId']
+                        create_jira_issue(selected_project_key, inputted_summary, inputted_description, selected_type, assignee)
+                        return Response(status=status.HTTP_200_OK)
+
+                    except Exception as e:
+                        print("Error: {}".format(e))
+                        return Response({"Fail": f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
     # 정의된 이벤트 수신 시 공개 메시지와 trigger_id를 얻기 위한 private 메시지를 뿌려주고 등록자명을 돌려주는 메서드
@@ -109,39 +128,26 @@ class SlackCustomView(APIView):
 
     # 모달을 띄워주는 메서드
     def run_modal(self, trigger_id, modal_view):
-        try:
-            res = Client.views_open(
-                trigger_id=trigger_id,
-                view=modal_view
-            )
-            view_id = res['view']['id']
-            return Response(status=status.HTTP_200_OK), modal_view, view_id
-        except SlackApiError as e:
-            print("Error opening modal: {}".format(e))
-            return Response({"Fail": f"{e.response['error']}"}, status=status.HTTP_400_BAD_REQUEST)
+        res = Client.views_open(
+            trigger_id=trigger_id,
+            view=modal_view
+        )
+        view_id = res['view']['id']
+        return Response({'ModalOpenSucess'}, status=status.HTTP_200_OK), modal_view, view_id
+
 
 
     # 모달의 뷰를 업데이트 하는 메서드
     def update_modal(self, modal_view, view_id, pnl, pnk):
-
-        # 아이들나라 전체 프로젝트 name list
-        # pnl, pnk = get_jira_project()
-        # print(pnl)
-        # print(pnk)
         # 가져온 list를 드롭다운으로 추가
-        try:
-            for i, value in zip(pnl, pnk):
-                modal_view['blocks'][1]['element']['options'].insert(0, {'text': {'type': 'plain_text', 'text': f"{i}"}, 'value': f'{value}'})
+        for i, value in zip(pnl, pnk):
+            modal_view['blocks'][1]['element']['options'].insert(0, {'text': {'type': 'plain_text', 'text': f"{i}"}, 'value': f'{value}'})
 
-            # 로딩문구 교체
-            modal_view['blocks'][1]['label']['text'] = "티켓을 등록하실 Jira 프로젝트를 선택해주세요."
-            print(modal_view)
+        # 로딩문구 교체
+        modal_view['blocks'][1]['label']['text'] = "티켓을 등록하실 Jira 프로젝트를 선택해주세요."
 
-            Client.views_update(
-                view=modal_view,
-                view_id=view_id
-            )
-            return Response(status=status.HTTP_200_OK)
-        except SlackApiError as e:
-            print("Error opening modal: {}".format(e))
-            return Response({"Fail": f"{e.response['error']}"}, status=status.HTTP_400_BAD_REQUEST)
+        Client.views_update(
+            view=modal_view,
+            view_id=view_id
+        )
+        return Response({'ModalUpdateSucess'}, status=status.HTTP_200_OK)

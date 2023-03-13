@@ -91,7 +91,7 @@ def open_reaction_modal():
                             "value": "value-2"
                         }
                     ],
-                    "action_id": "userSelectType-action"
+                    "action_id": "userSelectType"
                 },
                 "label": {
                     "type": "plain_text",
@@ -118,7 +118,7 @@ def open_reaction_modal():
                             "value": "value-0"
                         }
                     ],
-                    "action_id": "userSelectProject-action"
+                    "action_id": "userSelectProject"
                 },
                 "label": {
                     "type": "plain_text",
@@ -130,7 +130,7 @@ def open_reaction_modal():
                 "type": "input",
                 "element": {
                     "type": "plain_text_input",
-                    "action_id": "userInputSummary-action"
+                    "action_id": "userInputSummary"
                 },
                 "label": {
                     "type": "plain_text",
@@ -143,7 +143,7 @@ def open_reaction_modal():
                 "element": {
                     "type": "plain_text_input",
                     "multiline": True,
-                    "action_id": "userInputDescription-action"
+                    "action_id": "userInputDescription"
                 },
                 "label": {
                     "type": "plain_text",
@@ -194,7 +194,7 @@ def open_keyword_modal():
                             "value": "value-0"
                         }
                     ],
-                    "action_id": "userSelectProject-action"
+                    "action_id": "userSelectProject"
                 },
                 "label": {
                     "type": "plain_text",
@@ -206,7 +206,7 @@ def open_keyword_modal():
                 "type": "input",
                 "element": {
                     "type": "plain_text_input",
-                    "action_id": "userInputSummary-action"
+                    "action_id": "userInputSummary"
                 },
                 "label": {
                     "type": "plain_text",
@@ -219,7 +219,7 @@ def open_keyword_modal():
                 "element": {
                     "type": "plain_text_input",
                     "multiline": True,
-                    "action_id": "userInputDescription-action"
+                    "action_id": "userInputDescription"
                 },
                 "label": {
                     "type": "plain_text",

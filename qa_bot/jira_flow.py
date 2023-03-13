@@ -2,6 +2,7 @@ import json
 import os
 
 from jira import JIRA
+import requests
 
 '''
 이곳에서 Jira-Python 메서드를 요청하고 가공
@@ -40,12 +41,30 @@ def post_jira_project(user_select_project):
 
 
 # view에서 넘겨받은 정보를 토대로 jira 이슈 생성
-def create_jira_issue():
+def create_jira_issue(pj, sum, desc, istp, asgn):
     issue_dict = {
-        'project': {'key': 'QA'}, # jira project key
-        'summary': '테스트이슈', # str
-        'description': '테스트입니다', # str
-        'issuetype': {'name': '작업'},  # str
-        'assignee': {'id': '626889e21a4eb30069d0734f'}, # jira user accountId
+        'project': {'key': f'{pj}'}, # jira project key
+        'summary': f'{sum}', # str
+        'description': f'{desc}', # str
+        'issuetype': {'name': f'{istp}'},  # str
+        'assignee': {'id': f'{asgn}'}, # jira user accountId
     }
-    jira.create_issue(fields=issue_dict)
+    res = jira.create_issue(fields=issue_dict)
+    print(res)
+
+
+def get_jira_user_id(username):
+    headers = {
+        "Accept": "application/json"
+    }
+    response = requests.request(
+        "GET",
+        conf['JIRA']['JIRA_URL'] + 'rest/api/3/groupuserpicker',
+        headers=headers,
+        auth=auth_JIRA,
+        params={
+            "query": f"{username}"
+        }
+    )
+    # print(json.dumps(json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")))
+    return json.loads(response.text)

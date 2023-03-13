@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'qa_bot',
-    'jira_custom.jira_flow',
+    'qa_bot.jira_flow',
     'rest_framework',
 ]
 
