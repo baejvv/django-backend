@@ -41,16 +41,16 @@ def post_jira_project(user_select_project):
 
 
 # view에서 넘겨받은 정보를 토대로 jira 이슈 생성
-def create_jira_issue(pj, sum, desc, istp, asgn):
+def create_jira_issue(pj, sum, assgn):
     issue_dict = {
         'project': {'key': f'{pj}'}, # jira project key
         'summary': f'{sum}', # str
-        'description': f'{desc}', # str
-        'issuetype': {'name': f'{istp}'},  # str
-        'assignee': {'id': f'{asgn}'}, # jira user accountId
+        'description': 'test', # str
+        'issuetype': {'name': '버그'},  # str
+        'assignee': {'id': f'{assgn}'}, # jira user accountId
     }
     res = jira.create_issue(fields=issue_dict)
-    print(res)
+    return res
 
 
 def get_jira_user_id(username):
@@ -68,3 +68,4 @@ def get_jira_user_id(username):
     )
     # print(json.dumps(json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")))
     return json.loads(response.text)
+
